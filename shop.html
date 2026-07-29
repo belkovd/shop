@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вейп Маркет</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    #app { max-width: 400px; margin: 0 auto; background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+    .category { margin-bottom: 25px; }
+    .category h2 { border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+    .item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .item button { background: #007aff; color: #fff; border: none; padding: 5px 12px; border-radius: 12px; font-size: 14px; cursor: pointer; }
+    #cart { margin-top: 30px; border-top: 2px solid #ddd; padding-top: 15px; }
+    #cart ul { list-style: none; padding: 0; }
+    #cart li { display: flex; justify-content: space-between; padding: 4px 0; }
+    #order-btn { background: #34c759; color: #fff; border: none; padding: 12px; width: 100%; border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>🛒 Вейп Маркет</h1>
+  <div id="catalog"></div>
+  <div id="cart">
+    <h2>🛍️ Корзина</h2>
+    <ul id="cart-items"></ul>
+    <p id="total-price">Итого: 0 ₽</p>
+    <button id="order-btn">Оформить заказ</button>
+  </div>
+</div>
+<script>
+  const YOUR_ID = 8354123439;
+  const TELEGRAM_TOKEN = "8820317520:AAEJt3w1Woo0dT0ov4D5XM1e_q0BapZjNo";
+
+  const catalog = [
+    { category: "Жижи", items: [{ name: "Клубника 30мг", price: 400 }, { name: "Манго 50мг", price: 450 }] },
+    { category: "Поды", items: [{ name: "Elf Bar 1500", price: 700 }] },
+    { category: "Картриджи", items: [{ name: "Картридж X", price: 300 }] }
+  ];
+
+  let cart = [];
+
+  function renderCatalog() {
+    const container = document.getElementById('catalog');
+    catalog.forEach(cat => {
+      let html = <div class="category"><h2>${cat.category}</h2>;
+      cat.items.forEach(item => {
+        html += <div class="item"><span>${item.name} - ${item.price} ₽</span><button onclick="addToCart('${item.name}', ${item.price})">Добавить</button></div>;
+      });
+      html += </div>;
+      container.innerHTML += html;
+    });
+  }
+
+  function addToCart(name, price) {
+    const existing = cart.find(item => item.name === name);
+    if (existing) existing.count++;
+    else cart.push({ name, price, count: 1 });
+    renderCart();
+  }
+
+  function renderCart() {
+    const list = document.getElementById('cart-items');
+    list.innerHTML = '';
+    let total = 0;
+    cart.forEach(item => {
+      total += item.price * item.count;
+      const li = document.createElement('li');
+      li.textContent = ${item.name} x ${item.count} - ${item.price * item.count} ₽;
+      list.appendChild(li);
+    });
+    document.getElementById('total-price').textContent = Итого: ${total} ₽;
+  }
+
+  document.getElementById('order-btn').addEventListener('click', function() {
+    if (cart.length === 0) { alert('Корзина пуста'); return; }
+    let text = 'НОВЫЙ ЗАКАЗ:\n\n';
+    let total = 0;
+    cart.forEach(item => {
+      text += ${item.name} x ${item.count} = ${item.price * item.count} ₽\n;
+      total += item.price * item.count;
+    });
+    text += \nИтого: ${total} ₽;
+    const phone = prompt('Оставьте ваш номер телефона или @username:');
+    if (phone) {
+      text += \nКонтакт: ${phone};
+      sendOrder(text);
+      alert('Заказ отправлен! Я свяжусь с вами.');
+      cart = [];
+      renderCart();
+    }
+  });
+
+  function sendOrder(text) {
+    fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: YOUR_ID, text: text })
+    });
+  }
+
+  renderCatalog();
+</script>
+</body>
+</html>
